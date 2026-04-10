@@ -1,0 +1,196 @@
+{
+  "commands": {
+    "native": "auto",
+    "nativeSkills": "auto",
+    "restart": true
+  },
+  "gateway": {
+    "mode": "local",
+    "auth": {
+      "mode": "token",
+      "token": "xdclaw-u-lzz-1f8a3b-911dda314e901a14"
+    }
+  },
+  "models": {
+    "mode": "replace",
+    "providers": {
+      "xdclaw-pool": {
+        "baseUrl": "http://172.17.0.4:3000/v1",
+        "apiKey": "sk-f8abdde8d7fa4dc46965e560549c5f4b4169f2991861abe3a8da9db8e988f41e",
+        "api": "openai-completions",
+        "models": [
+          {
+            "id": "mimo-v2-pro",
+            "name": "MiMo V2 Pro",
+            "contextWindow": 131072,
+            "maxTokens": 8192
+          },
+          {
+            "id": "mimo-v2-flash",
+            "name": "MiMo V2 Flash",
+            "contextWindow": 131072,
+            "maxTokens": 8192
+          },
+          {
+            "id": "qwen-plus",
+            "name": "通义 Qwen-Plus",
+            "contextWindow": 131072,
+            "maxTokens": 8192
+          },
+          {
+            "id": "qwen3.5-plus",
+            "name": "通义 Qwen3.5-Plus",
+            "contextWindow": 131072,
+            "maxTokens": 8192
+          },
+          {
+            "id": "qwen-max",
+            "name": "通义 Qwen-Max",
+            "contextWindow": 32768,
+            "maxTokens": 8192
+          },
+          {
+            "id": "deepseek-v3.2",
+            "name": "DeepSeek V3.2",
+            "contextWindow": 131072,
+            "maxTokens": 8192
+          },
+          {
+            "id": "deepseek-reasoner",
+            "name": "DeepSeek R1",
+            "reasoning": true,
+            "contextWindow": 65536,
+            "maxTokens": 8192
+          },
+          {
+            "id": "glm-5",
+            "name": "智谱 GLM-5",
+            "contextWindow": 32768,
+            "maxTokens": 8192
+          },
+          {
+            "id": "glm-5-turbo",
+            "name": "智谱 GLM-5 Turbo",
+            "contextWindow": 32768,
+            "maxTokens": 8192
+          },
+          {
+            "id": "kimi-k2.5",
+            "name": "Kimi K2.5",
+            "contextWindow": 131072,
+            "maxTokens": 8192
+          },
+          {
+            "id": "doubao-seed-2.0-pro",
+            "name": "豆包 Seed 2.0 Pro",
+            "contextWindow": 32768,
+            "maxTokens": 8192
+          },
+          {
+            "id": "minimax-m2.5",
+            "name": "MiniMax M2.5",
+            "contextWindow": 32768,
+            "maxTokens": 8192
+          },
+          {
+            "id": "nvidia/nemotron-3-super-120b-a12b",
+            "name": "NVIDIA Nemotron 120B",
+            "contextWindow": 131072,
+            "maxTokens": 8192
+          }
+        ]
+      }
+    }
+  },
+  "agents": {
+    "defaults": {
+      "model": {
+        "primary": "xdclaw-pool/qwen-max",
+        "fallbacks": [
+          "xdclaw-pool/qwen-plus",
+          "xdclaw-pool/deepseek-v3.2",
+          "xdclaw-pool/glm-5",
+          "xdclaw-pool/kimi-k2.5"
+        ]
+      },
+      "imageModel": "xdclaw-pool/qwen-vl-max",
+      "memorySearch": {
+        "enabled": true,
+        "provider": "openai",
+        "model": "text-embedding-v3",
+        "remote": {
+          "baseUrl": "http://172.17.0.4:3000/v1/",
+          "apiKey": "sk-f8abdde8d7fa4dc46965e560549c5f4b4169f2991861abe3a8da9db8e988f41e"
+        },
+        "sync": {
+          "watch": true
+        },
+        "query": {
+          "maxResults": 5,
+          "minScore": 0.3,
+          "hybrid": {
+            "enabled": true,
+            "vectorWeight": 0.7,
+            "textWeight": 0.3,
+            "temporalDecay": {
+              "enabled": true,
+              "halfLifeDays": 30
+            }
+          }
+        }
+      },
+      "compaction": {
+        "mode": "safeguard",
+        "reserveTokensFloor": 20000
+      },
+      "timeoutSeconds": 300,
+      "workspace": "/root/clawd"
+    }
+  },
+  "plugins": {
+    "allow": [
+      "openclaw-qqbot"
+    ],
+    "entries": {
+      "openclaw-qqbot": {
+        "enabled": true
+      }
+    }
+  },
+  "channels": {
+    "qqbot": {
+      "enabled": true,
+      "appId": "1903793520",
+      "clientSecret": "eCYhdLp69yZw61jD",
+      "imageServerBaseUrl": "http://47.57.13.82:28813"
+    }
+  },
+  "skills": {
+    "load": {
+      "extraDirs": [
+        "/root/clawd/skills"
+      ]
+    }
+  },
+  "tools": {
+    "exec": {
+      "host": "gateway",
+      "security": "full",
+      "ask": "off"
+    },
+    "web": {
+      "search": {
+        "provider": "brave",
+        "apiKey": "searxng-local-free"
+      },
+      "fetch": {
+        "enabled": true
+      }
+    },
+    "sessions_spawn": {
+      "attachments": {
+        "enabled": true
+      }
+    }
+  }
+}
