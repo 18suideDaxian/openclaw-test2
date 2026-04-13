@@ -1,3 +1,4 @@
+---
 name: memory-pkm
 description: AI agent 三层知识管理系统。用于长期存储用户对话、文档和知识，支持手动清理和自动提炼。当涉及记忆管理、知识整理、对话归档、记忆清理时使用。
 ---
@@ -70,7 +71,7 @@ tags: [tag1, tag2]
 ### 4. 记忆清理
 
 **可清理的内容：**
-- `memory/conversations/` — 随时可清理，已提炼到knowledge的立即清理
+- `memory/conversations/` — 随时可清理，已提炼的不怕丢
 - `memory/docs/` — 不再需要的文档
 
 **谨慎清理：**
