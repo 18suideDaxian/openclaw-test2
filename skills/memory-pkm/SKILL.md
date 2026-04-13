@@ -1,88 +1,105 @@
-# memory-pkm
+---
+name: memory-pkm
+description: AI agent 三层知识管理系统。用于长期存储用户对话、文档和知识，支持手动清理和自动提炼。当涉及记忆管理、知识整理、对话归档、记忆清理时使用。
+---
 
-## 功能描述
+# Memory PKM — 三层知识管理系统
 
-- **自动归档**：在重要对话结束后，立即将信息归档到 `knowledge`、`User.md` 和 `MEMORY.md` 中。
-- **定期清理**：引入定期清理和整理的机制，自动归档旧信息并删除不再需要的信息。
+## 架构
 
-## 使用方法
-
-1. **自动归档**：
-   - 在重要对话结束后，调用 `archive_conversation` 函数将信息归档。
-2. **定期清理**：
-   - 设置一个定时任务，定期调用 `cleanup_memory` 函数进行清理。
-
-## 代码实现
-
-### 自动归档
-
-```python
-import datetime
-
-def archive_conversation(conversation, user_info):
-    # 将对话内容写入 knowledge
-    with open('memory/knowledge.md', 'a') as f:
-        f.write(f"## {datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n")
-        f.write(conversation + "\n\n")
-
-    # 更新 User.md
-    with open('memory/User.md', 'a') as f:
-        f.write(f"## {datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n")
-        f.write(user_info + "\n\n")
-
-    # 更新 MEMORY.md
-    with open('memory/MEMORY.md', 'a') as f:
-        f.write(f"## {datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n")
-        f.write(conversation + "\n\n")
+```
+memory/conversations/   ← 原始对话层（全量保留，可手动清理）
+         ↓ 定期提炼
+memory/knowledge/       ← 知识层（结构化知识条目）
+         ↓ 自动建索引
+memory/index.md         ← 索引层（轻量，常驻加载）
 ```
 
-### 定期清理
+## 核心规则
 
-```python
-import os
-from datetime import datetime, timedelta
+1. **索引层必须足够小** — 新会话只加载 `memory/index.md`，按需深入
+2. **知识层是精华** — 从对话提炼，不是复制粘贴
+3. **原始对话可丢** — 提炼后对话可安全清理，知识在知识层
+4. **有进有出** — 定期清理是常态，不是故障
+5. **对话必须提炼** — 每次重要对话结束后，提炼关键信息写入知识层
+6. **所有操作由 agent 直接执行文件读写** — 不依赖外部脚本
 
-def cleanup_memory(days_to_keep=30):
-    # 获取当前时间
-    now = datetime.now()
-    
-    # 遍历 knowledge 文件，删除超过指定天数的内容
-    with open('memory/knowledge.md', 'r') as f:
-        lines = f.readlines()
-    
-    with open('memory/knowledge.md', 'w') as f:
-        for line in lines:
-            if line.startswith("## "):
-                date_str = line[3:].strip()
-                entry_date = datetime.strptime(date_str, '%Y-%m-%d %H:%M:%S')
-                if (now - entry_date) < timedelta(days=days_to_keep):
-                    f.write(line)
-            else:
-                f.write(line)
-    
-    # 同样的逻辑应用于 User.md 和 MEMORY.md
-    for file_name in ['memory/User.md', 'memory/MEMORY.md']:
-        with open(file_name, 'r') as f:
-            lines = f.readlines()
-        
-        with open(file_name, 'w') as f:
-            for line in lines:
-                if line.startswith("## "):
-                    date_str = line[3:].strip()
-                    entry_date = datetime.strptime(date_str, '%Y-%m-%d %H:%M:%S')
-                    if (now - entry_date) < timedelta(days=days_to_keep):
-                        f.write(line)
-                else:
-                    f.write(line)
+## 工作流
+
+### 1. 对话归档
+
+对话结束后，将对话摘要存入 `memory/conversations/`。
+
+文件命名：`YYYY-MM-DD-topic.md`
+
+内容格式：
+```markdown
+---
+date: YYYY-MM-DD
+topic: 简短描述
+tags: [tag1, tag2]
+---
+## 摘要
+一句话概括这段对话
+
+## 要点
+- 要点1
+- 要点2
+
+## 待办
+- [ ] 有后续行动的话
 ```
 
-### 定时任务
+### 2. 知识提炼
 
-为了定期执行清理任务，可以使用 `cron` 或其他定时任务工具。以下是一个简单的 `cron` 示例：
+从对话或文档中提炼知识，写入 `memory/knowledge/`。
 
-```bash
-# 每天凌晨 2 点执行清理任务
-0 2 * * * /usr/bin/python3 /path/to/cleanup_script.py
-```
+文件命名：`k{id}-{slug}.md`
 
-其中 `cleanup_script.py` 包含上述 `cleanup_memory` 函数的实现。
+内容格式见 `memory/knowledge/TEMPLATE.md`
+
+提炼原则：
+- 用自己的话概括，不抄原文
+- 一个条目一个主题
+- 关联已有知识条目
+- 标注来源
+
+### 3. 索引更新
+
+每次新增/删除/修改知识条目后，直接编辑 `memory/index.md` 更新索引表。
+
+### 4. 记忆清理
+
+**可清理的内容：**
+- `memory/conversations/` — 随时可清理，已提炼到knowledge的立即清理
+- `memory/docs/` — 不再需要的文档
+
+**谨慎清理：**
+- `memory/knowledge/` — 这是精华，清理前确认已无价值
+
+**不要清理：**
+- `memory/index.md` — 始终保持精简准确
+
+### 5. 膨胀检测
+
+当索引层超过 200 行或知识层超过 50 个条目时，触发整理：
+- 索引是否太长 → 精简或拆分
+- 知识条目是否有重复 → 合并
+- 对话归档是否太多 → 批量清理已提炼的
+
+## 与 AGENTS.md 的配合
+
+新会话启动时的加载顺序：
+1. `memory/index.md` — 索引层（必须）
+2. 按索引加载相关 `memory/knowledge/*.md`
+3. `MEMORY.md` — 长期记忆精华（可选）
+
+**禁止全量加载 memory/ 目录。**
+
+## MEMORY.md 的角色
+
+`MEMORY.md` 是最高层级的精华：
+- 从知识层中再提炼最重要的内容
+- 类似"人脑中不需要刻意回忆就知道的事"
+- 保持在 50 行以内
+- 定期从知识层中升级条目进来
